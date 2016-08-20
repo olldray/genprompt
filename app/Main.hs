@@ -5,19 +5,23 @@ module Main where
 import Data.Default ( Default(..))
 import GHC.Generics ( Generic)
 import Lib
+import Data.Text as T
 
-data Wrapper = Wrapper Int
+data OnlyAnInt = OnlyAnInt Int
     deriving (Show, Generic)
 
-instance Default Wrapper where
-    def = Wrapper 23
-instance Prompt Wrapper where
+instance Prompt OnlyAnInt where
+
+data BigData = SomethingSimple T.Text | MoreComplicated Int T.Text
+    deriving (Show, Generic)
+
+instance Prompt BigData where
 
 main :: IO ()
 main = do
     laddend <- prompt
     raddend <- prompt
     print $ go laddend raddend
-    where go :: Wrapper -> Wrapper -> Wrapper
-          go (Wrapper x) (Wrapper y) = Wrapper (x+y)
+    where go (OnlyAnInt x) (MoreComplicated y z) = x + y
+          go (OnlyAnInt x) (SomethingSimple y) = x * T.length y
 
