@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeOperators #-}
 
@@ -11,7 +12,8 @@ import Prelude hiding ( putStrLn
                       , getLine
                       )
 import qualified Prelude
-import Data.Text as T
+import qualified Data.Text as T
+import qualified Data.Typeable as Typeable
 import Data.Default ( Default(..))
 import GHC.Generics ( Generic
                     , Rep
@@ -25,6 +27,7 @@ import GHC.Generics ( Generic
                     , (:*:)(..)
                     )
 
+-----------------------------------------------------------------------------------
 
 class Prompt a where
     prompt :: (CommandLine m) => m a
@@ -37,8 +40,9 @@ class Prompt a where
 class GPrompt a where
     gprompt :: (CommandLine m) => m (a p)
 
-instance (GPrompt f) => GPrompt (M1 i t f) where
+instance (GPrompt f, Typeable.Typeable f) => GPrompt (M1 i t f) where
     gprompt = do
+        putStrLn . show $ Typeable.typeRep (Typeable.Proxy :: Typeable.Proxy f)
         thing <- gprompt
         return $ M1 thing
 
@@ -74,6 +78,7 @@ instance GPrompt V1 where
 instance GPrompt U1 where
     gprompt = return U1
 
+-----------------------------------------------------------------------------------
 
 
 class Monad m => CommandLine m where
