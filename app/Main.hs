@@ -1,10 +1,13 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 module Main where
 
 import Data.Default ( Default(..))
+import GHC.Generics ( Generic)
 import Lib
 
 data Wrapper = Wrapper Int
-    deriving (Show)
+    deriving (Show, Generic)
 
 instance Default Wrapper where
     def = Wrapper 23
