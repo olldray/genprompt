@@ -4,10 +4,13 @@
 {-# LANGUAGE TypeOperators #-}
 
 module Lib
-    ( someFunc
-    , Prompt (..)
+    ( Prompt (..)
     ) where
 
+import Prelude hiding ( putStrLn
+                      , getLine
+                      )
+import qualified Prelude
 import Data.Text as T
 import Data.Default ( Default(..))
 import GHC.Generics ( Generic
@@ -22,15 +25,15 @@ import GHC.Generics ( Generic
 
 
 class Prompt a where
-    prompt :: IO a
+    prompt :: (CommandLine m) => m a
 
-    default prompt :: (Generic a, GPrompt (Rep a)) => IO a
+    default prompt :: (CommandLine m, Generic a, GPrompt (Rep a)) => m a
     prompt = do
         thing <- gprompt
         return $ to thing
 
 class GPrompt a where
-    gprompt :: IO (a p)
+    gprompt :: (CommandLine m) => m (a p)
 
 instance (GPrompt f) => GPrompt (M1 i t f) where
     gprompt = do
@@ -63,5 +66,12 @@ instance (Read c) => GPrompt (K1 i c) where
         let thing' = read thing
         return $ K1 thing'
 
-someFunc :: IO ()
-someFunc = putStrLn "someFunc"
+
+
+class Monad m => CommandLine m where
+    putStrLn :: String -> m ()
+    getLine :: m String
+
+instance CommandLine IO where
+    putStrLn = Prelude.putStrLn
+    getLine = Prelude.getLine
