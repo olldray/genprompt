@@ -19,6 +19,8 @@ import GHC.Generics ( Generic
                     , to
                     , M1(..)
                     , K1(..)
+                    , V1
+                    , U1(..)
                     , (:+:)(..)
                     , (:*:)(..)
                     )
@@ -65,6 +67,12 @@ instance (Read c) => GPrompt (K1 i c) where
         thing <- getLine
         let thing' = read thing
         return $ K1 thing'
+
+instance GPrompt V1 where
+    gprompt = undefined
+
+instance GPrompt U1 where
+    gprompt = return U1
 
 
 
