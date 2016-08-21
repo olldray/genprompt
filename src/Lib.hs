@@ -12,7 +12,6 @@ module Lib
     ) where
 
 import Prelude hiding ( putStrLn
-                      , print
                       , getLine
                       )
 import qualified Prelude
@@ -115,19 +114,13 @@ instance (Constructor t) => GDescribe (M1 C t f) where
 
 
 instance Describe Bool where
-    describe _ = "Bool"
 instance Describe Char where
-    describe _ = "Char"
 instance Describe Double where
-    describe _ = "Double"
 instance Describe Float where
-    describe _ = "Float"
 instance Describe Int where
-    describe _ = "Int"
 instance Describe Integer where
     describe _ = "Integer"
 instance Describe Ordering where
-    describe _ = "Ordering"
 instance (Describe a) => Describe [a] where
     describe _ = T.concat ["[", describe (undefined :: a), "]"]
 instance (Describe a) => Describe (Maybe a) where
@@ -135,7 +128,6 @@ instance (Describe a) => Describe (Maybe a) where
 instance (Describe a, Describe b) => Describe (Either a b) where
     describe _ = T.concat ["Either ", describe (undefined :: a), describe (undefined :: b)]
 instance Describe () where
-    describe _ = "()"
 instance (Describe a, Describe b) => Describe (a,b) where
     describe _ = T.concat [ "("
                           , describe (undefined :: a)
@@ -159,10 +151,8 @@ instance Describe T.Text where
 
 class Monad m => CommandLine m where
     putStrLn :: String -> m ()
-    print :: (Show a) => a -> m ()
     getLine :: m String
 
 instance CommandLine IO where
     putStrLn = Prelude.putStrLn
-    print = Prelude.print
     getLine = Prelude.getLine
