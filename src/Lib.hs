@@ -2,9 +2,9 @@
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE KindSignatures #-}
 
 module Lib
     ( Prompt (..)
@@ -28,9 +28,11 @@ import GHC.Generics ( Generic
                     , V1
                     , U1(..)
                     , D
+                    , C
                     , (:+:)(..)
                     , (:*:)(..)
                     , Datatype(..)
+                    , Constructor(..)
                     )
 
 -----------------------------------------------------------------------------------
@@ -54,9 +56,12 @@ instance (GPrompt f) => GPrompt (M1 i t f) where
         thing <- gprompt
         return $ M1 thing
 
-instance (GPrompt f, GPrompt g) => GPrompt (f :+: g) where
+instance (GPrompt f, GPrompt g, GDescribe f, GDescribe g) => GPrompt (f :+: g) where
     gprompt = do
-        putStrLn $ "l or r? "
+        let lName = describe' (undefined :: (f p))
+            rName = describe' (undefined :: (g p))
+            statement = T.concat ["Choose between ", lName, " or ", rName, "\nl or r? "]
+            in putStrLn $ T.unpack statement
         answer <- getLine
         case answer of
             "l" -> do
@@ -73,9 +78,11 @@ instance (GPrompt f, GPrompt g) => GPrompt (f :*: g) where
         rthing <- gprompt
         return $ lthing :*: rthing
 
-instance (Read c) => GPrompt (K1 i c) where
+instance (Read c, Describe c) => GPrompt (K1 i c) where
     gprompt = do
-        putStrLn $ "I need a thing: "
+        let thingName = describe (undefined :: c)
+            statement = T.concat ["I need a ", thingName, ": "]
+            in putStrLn $ T.unpack statement
         thing <- getLine
         let thing' = read thing
         return $ K1 thing'
@@ -90,17 +97,63 @@ instance GPrompt U1 where
 
 -----------------------------------------------------------------------------------
 
-class (Generic a) => Describe a where
+class Describe a where
     describe :: a -> T.Text
 
-    default describe :: (GDescribe (Rep a)) => a -> T.Text
+    default describe :: (Generic a, GDescribe (Rep a)) => a -> T.Text
     describe a = describe' $ from a
 
-class GDescribe (a :: * -> *) where
+class GDescribe a where
     describe' :: a p -> T.Text
 
 instance (Datatype t) => GDescribe (M1 D t f) where
     describe' a = T.pack $ datatypeName a
+
+instance (Constructor t) => GDescribe (M1 C t f) where
+    describe' a = T.pack $ conName a
+
+
+
+instance Describe Bool where
+    describe _ = "Bool"
+instance Describe Char where
+    describe _ = "Char"
+instance Describe Double where
+    describe _ = "Double"
+instance Describe Float where
+    describe _ = "Float"
+instance Describe Int where
+    describe _ = "Int"
+instance Describe Integer where
+    describe _ = "Integer"
+instance Describe Ordering where
+    describe _ = "Ordering"
+instance (Describe a) => Describe [a] where
+    describe _ = T.concat ["[", describe (undefined :: a), "]"]
+instance (Describe a) => Describe (Maybe a) where
+    describe _ = T.concat ["Maybe ", describe (undefined :: a)]
+instance (Describe a, Describe b) => Describe (Either a b) where
+    describe _ = T.concat ["Either ", describe (undefined :: a), describe (undefined :: b)]
+instance Describe () where
+    describe _ = "()"
+instance (Describe a, Describe b) => Describe (a,b) where
+    describe _ = T.concat [ "("
+                          , describe (undefined :: a)
+                          , ", "
+                          , describe (undefined :: b)
+                          , ")"
+                          ]
+instance (Describe a, Describe b, Describe c) => Describe (a,b,c) where
+    describe _ = T.concat [ "("
+                          , describe (undefined :: a)
+                          , ", "
+                          , describe (undefined :: b)
+                          , ", "
+                          , describe (undefined :: c)
+                          ,")"
+                          ]
+instance Describe T.Text where
+    describe _ = "Text"
 
 -----------------------------------------------------------------------------------
 
