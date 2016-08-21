@@ -9,6 +9,7 @@
 module Lib
     ( Prompt (..)
     , Describe (..)
+    , CommandLine (..)
     ) where
 
 import Prelude hiding ( putStrLn
