@@ -30,7 +30,7 @@ import GHC.Generics ( Generic
                     , D
                     , (:+:)(..)
                     , (:*:)(..)
-                    , Datatype
+                    , Datatype(..)
                     )
 
 -----------------------------------------------------------------------------------
@@ -40,7 +40,9 @@ class Prompt a where
 
     default prompt :: (CommandLine m, Describe a, Generic a, GPrompt (Rep a)) => m a
     prompt = do
-        print $ describe (undefined :: a)
+        let dataName = describe (undefined :: a)
+            statement = T.concat ["Now filling a ", dataName, ": "]
+            in putStrLn . T.unpack $ statement
         thing <- gprompt
         return $ to thing
 
@@ -97,8 +99,8 @@ class (Generic a) => Describe a where
 class GDescribe (a :: * -> *) where
     describe' :: a p -> T.Text
 
-instance GDescribe (M1 D t f) where
-    describe' _ = "Hello"
+instance (Datatype t) => GDescribe (M1 D t f) where
+    describe' a = T.pack $ datatypeName a
 
 -----------------------------------------------------------------------------------
 
