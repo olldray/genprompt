@@ -11,11 +11,13 @@ data OnlyAnInt = OnlyAnInt Int
     deriving (Show, Generic)
 
 instance Prompt OnlyAnInt where
+instance Describe OnlyAnInt where
 
 data BigData = SomethingSimple T.Text | MoreComplicated Int T.Text
     deriving (Show, Generic)
 
 instance Prompt BigData where
+instance Describe BigData where
 
 main :: IO ()
 main = do

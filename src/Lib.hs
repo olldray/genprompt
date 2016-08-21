@@ -1,19 +1,23 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DefaultSignatures #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Lib
     ( Prompt (..)
+    , Describe (..)
     ) where
 
 import Prelude hiding ( putStrLn
+                      , print
                       , getLine
                       )
 import qualified Prelude
 import qualified Data.Text as T
-import qualified Data.Typeable as Typeable
+import Data.Proxy ( Proxy(..))
 import Data.Default ( Default(..))
 import GHC.Generics ( Generic
                     , Rep
@@ -23,26 +27,28 @@ import GHC.Generics ( Generic
                     , K1(..)
                     , V1
                     , U1(..)
+                    , D
                     , (:+:)(..)
                     , (:*:)(..)
+                    , Datatype
                     )
 
 -----------------------------------------------------------------------------------
 
 class Prompt a where
-    prompt :: (CommandLine m) => m a
+    prompt :: (CommandLine m, Describe a) => m a
 
-    default prompt :: (CommandLine m, Generic a, GPrompt (Rep a)) => m a
+    default prompt :: (CommandLine m, Describe a, Generic a, GPrompt (Rep a)) => m a
     prompt = do
+        print $ describe (undefined :: a)
         thing <- gprompt
         return $ to thing
 
 class GPrompt a where
     gprompt :: (CommandLine m) => m (a p)
 
-instance (GPrompt f, Typeable.Typeable f) => GPrompt (M1 i t f) where
+instance (GPrompt f) => GPrompt (M1 i t f) where
     gprompt = do
-        putStrLn . show $ Typeable.typeRep (Typeable.Proxy :: Typeable.Proxy f)
         thing <- gprompt
         return $ M1 thing
 
@@ -80,11 +86,28 @@ instance GPrompt U1 where
 
 -----------------------------------------------------------------------------------
 
+-----------------------------------------------------------------------------------
+
+class (Generic a) => Describe a where
+    describe :: a -> T.Text
+
+    default describe :: (GDescribe (Rep a)) => a -> T.Text
+    describe a = describe' $ from a
+
+class GDescribe (a :: * -> *) where
+    describe' :: a p -> T.Text
+
+instance GDescribe (M1 D t f) where
+    describe' _ = "Hello"
+
+-----------------------------------------------------------------------------------
 
 class Monad m => CommandLine m where
     putStrLn :: String -> m ()
+    print :: (Show a) => a -> m ()
     getLine :: m String
 
 instance CommandLine IO where
     putStrLn = Prelude.putStrLn
+    print = Prelude.print
     getLine = Prelude.getLine
