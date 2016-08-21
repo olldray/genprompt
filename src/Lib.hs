@@ -12,10 +12,6 @@ module Lib
     , CommandLine (..)
     ) where
 
-import Prelude hiding ( putStrLn
-                      , getLine
-                      )
-import qualified Prelude
 import qualified Data.Text as T
 import Data.Proxy ( Proxy(..))
 import Data.Default ( Default(..))
@@ -44,7 +40,7 @@ class Prompt a where
     prompt = do
         let dataName = describe (undefined :: a)
             statement = T.concat ["Now filling a ", dataName, ": "]
-            in putStrLn . T.unpack $ statement
+            in clPutStrLn . T.unpack $ statement
         thing <- gprompt
         return $ to thing
 
@@ -61,8 +57,8 @@ instance (GPrompt f, GPrompt g, GDescribe f, GDescribe g) => GPrompt (f :+: g) w
         let lName = describe' (undefined :: (f p))
             rName = describe' (undefined :: (g p))
             statement = T.concat ["Choose between ", lName, " or ", rName, "\nl or r? "]
-            in putStrLn $ T.unpack statement
-        answer <- getLine
+            in clPutStrLn $ T.unpack statement
+        answer <- clGetLine
         case answer of
             "l" -> do
                 thing <- gprompt
@@ -82,8 +78,8 @@ instance (Read c, Describe c) => GPrompt (K1 i c) where
     gprompt = do
         let thingName = describe (undefined :: c)
             statement = T.concat ["I need a ", thingName, ": "]
-            in putStrLn $ T.unpack statement
-        thing <- getLine
+            in clPutStrLn $ T.unpack statement
+        thing <- clGetLine
         let thing' = read thing
         return $ K1 thing'
 
@@ -112,6 +108,17 @@ instance (Datatype t) => GDescribe (M1 D t f) where
 instance (Constructor t) => GDescribe (M1 C t f) where
     describe' a = T.pack $ conName a
 
+instance (GDescribe f, GDescribe g) => GDescribe (f :+: g) where
+    describe' _ = T.concat [ describe' (undefined :: f p)
+                           , " | "
+                           , describe' (undefined :: g p)
+                           ]
+
+instance (GDescribe f, GDescribe g) => GDescribe (f :*: g) where
+    describe' _ = T.concat [ describe' (undefined :: f p)
+                           , " "
+                           , describe' (undefined :: g p)
+                           ]
 
 
 instance Describe Bool where
@@ -151,9 +158,9 @@ instance Describe T.Text where
 -----------------------------------------------------------------------------------
 
 class Monad m => CommandLine m where
-    putStrLn :: String -> m ()
-    getLine :: m String
+    clPutStrLn :: String -> m ()
+    clGetLine :: m String
 
 instance CommandLine IO where
-    putStrLn = Prelude.putStrLn
-    getLine = Prelude.getLine
+    clPutStrLn = putStrLn
+    clGetLine = getLine
